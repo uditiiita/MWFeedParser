@@ -623,6 +623,7 @@
                           [self addMediaContentWithAttributes:self.currentPathAttributes[currentPath]
                                                  thumbnailURL:self.currentMediaThumbnailURL
                                                    toFeedItem:self.item];
+                          self.currentMediaThumbnailURL = nil;
                         }
                     }
                     
