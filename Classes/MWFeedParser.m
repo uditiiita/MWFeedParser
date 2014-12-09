@@ -617,13 +617,20 @@
                         else if ([currentPath isEqualToString:@"/rss/channel/item/enclosure"]) { [self createEnclosureFromAttributes:currentElementAttributes andAddToItem:item]; processed = YES; }
                         else if ([currentPath isEqualToString:@"/rss/channel/item/dc:date"]) { if (processedText.length > 0) item.date = [NSDate dateFromInternetDateTimeString:processedText formatHint:DateFormatHintRFC3339]; processed = YES; }
                         else if ([currentPath isEqualToString:@"/rss/channel/item/media:thumbnail"]) {
+                          if (self.currentMediaThumbnailURL) {
+                            [self addMediaContentWithAttributes:nil
+                                                   thumbnailURL:self.currentMediaThumbnailURL
+                                                     toFeedItem:self.item];
+                          }
                           self.currentMediaThumbnailURL = self.currentPathAttributes[currentPath][@"url"];
+                          processed = YES;
                         }
                         else if ([currentPath isEqualToString:@"/rss/channel/item/media:content"]) {
                           [self addMediaContentWithAttributes:self.currentPathAttributes[currentPath]
                                                  thumbnailURL:self.currentMediaThumbnailURL
                                                    toFeedItem:self.item];
                           self.currentMediaThumbnailURL = nil;
+                          processed = YES;
                         }
                     }
                     
@@ -702,7 +709,12 @@
         if (!processed) {
             if (((feedType == FeedTypeRSS || feedType == FeedTypeRSS1) && [qName isEqualToString:@"item"]) ||
                 (feedType == FeedTypeAtom && [qName isEqualToString:@"entry"])) {
-                
+              if (self.currentMediaThumbnailURL) {
+                [self addMediaContentWithAttributes:nil
+                                       thumbnailURL:self.currentMediaThumbnailURL
+                                         toFeedItem:self.item];
+                self.currentMediaThumbnailURL = nil;
+              }
                 // Dispatch item to delegate
                 [self dispatchFeedItemToDelegate];
                 
