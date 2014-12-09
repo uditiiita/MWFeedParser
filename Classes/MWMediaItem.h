@@ -8,6 +8,11 @@
 
 #import <Foundation/Foundation.h>
 
+typedef enum {
+  MWMediaItemTypeImage,
+  MWMediaItemTypeOther
+} MWMediaItemType;
+
 @interface MWMediaItem : NSObject
 
 @property (nonatomic) NSString *thumbnailURL;
@@ -18,5 +23,7 @@
  */
 @property (nonatomic) NSString *contentType;
 @property (nonatomic) NSString *contentMedium;
+
+- (MWMediaItemType)type;
 
 @end

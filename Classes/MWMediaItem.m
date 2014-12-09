@@ -10,4 +10,15 @@
 
 @implementation MWMediaItem
 
+- (MWMediaItemType)type {
+  if ([self.contentMedium isEqualToString:@"image"] ||
+      [self.contentType isEqualToString:@"image/jpeg"] ||
+      [self.contentType isEqualToString:@"image/jpg"] ||
+      [self.contentType isEqualToString:@"image/png"] ||
+      [self.contentType isEqualToString:@"image/gif"]) {
+    return MWMediaItemTypeImage;
+  }
+  return MWMediaItemTypeOther;
+}
+
 @end
