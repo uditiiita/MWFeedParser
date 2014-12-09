@@ -31,6 +31,7 @@
 #import "MWFeedParser_Private.h"
 #import "NSString+HTML.h"
 #import "NSDate+InternetDateTime.h"
+#import "MWMediaItem.h"
 
 // NSXMLParser Logging
 #if 0 // Set to 1 to enable XML parsing logs
@@ -44,6 +45,12 @@
 							 [e isEqualToString:@"hr"] || [e isEqualToString:@"link"] || [e isEqualToString:@"base"] || \
 							 [e isEqualToString:@"basefont"] || [e isEqualToString:@"frame"] || [e isEqualToString:@"meta"] || \
 							 [e isEqualToString:@"area"] || [e isEqualToString:@"col"] || [e isEqualToString:@"param"])
+
+@interface MWFeedParser ()
+
+@property (nonatomic) NSString *currentMediaThumbnailURL;
+
+@end
 
 // Implementation
 @implementation MWFeedParser
@@ -124,9 +131,11 @@
 	self.item = nil;
 	self.info = nil;
 	self.currentElementAttributes = nil;
+  self.currentPathAttributes = [[NSMutableDictionary alloc] init];
 	parseStructureAsContent = NO;
 	self.pathOfElementWithXHTMLType = nil;
 	hasEncounteredItems = NO;
+  self.currentMediaThumbnailURL = nil;
 }
 
 // Parse using URL for backwards compatibility
@@ -426,7 +435,11 @@
         // Adjust path
         self.currentPath = [currentPath stringByAppendingPathComponent:qualifiedName];
         self.currentElementAttributes = attributeDict;
+        [self.currentPathAttributes setObject:attributeDict forKey:self.currentPath];
+      
+      if ([currentPath isEqualToString:@"/rss/channel/item/media:content"]) {
         
+      }
         // Parse content as structure (Atom feeds with element type="xhtml")
         // - Use elementName not qualifiedName to ignore XML namespaces for XHTML entities
         if (parseStructureAsContent) {
@@ -603,6 +616,14 @@
                         else if ([currentPath isEqualToString:@"/rss/channel/item/pubDate"]) { if (processedText.length > 0) item.date = [NSDate dateFromInternetDateTimeString:processedText formatHint:DateFormatHintRFC822]; processed = YES; }
                         else if ([currentPath isEqualToString:@"/rss/channel/item/enclosure"]) { [self createEnclosureFromAttributes:currentElementAttributes andAddToItem:item]; processed = YES; }
                         else if ([currentPath isEqualToString:@"/rss/channel/item/dc:date"]) { if (processedText.length > 0) item.date = [NSDate dateFromInternetDateTimeString:processedText formatHint:DateFormatHintRFC3339]; processed = YES; }
+                        else if ([currentPath isEqualToString:@"/rss/channel/item/media:thumbnail"]) {
+                          self.currentMediaThumbnailURL = self.currentPathAttributes[currentPath][@"url"];
+                        }
+                        else if ([currentPath isEqualToString:@"/rss/channel/item/media:content"]) {
+                          [self addMediaContentWithAttributes:self.currentPathAttributes[currentPath]
+                                                 thumbnailURL:self.currentMediaThumbnailURL
+                                                   toFeedItem:self.item];
+                        }
                     }
                     
                     // Info
@@ -865,6 +886,22 @@
 
 #pragma mark -
 #pragma mark Misc
+
+- (void)addMediaContentWithAttributes:(NSDictionary *)contentAttributes
+                         thumbnailURL:(NSString *)thumbnailURL
+                           toFeedItem:(MWFeedItem *)currentItem {
+  MWMediaItem *media = [MWMediaItem new];
+  media.thumbnailURL= thumbnailURL;
+  media.contentURL = contentAttributes[@"url"];
+  media.contentType = contentAttributes[@"type"];
+  media.contentMedium = contentAttributes[@"medium"];
+  
+  if (currentItem.mediaItems) {
+    currentItem.mediaItems = [currentItem.mediaItems arrayByAddingObject:media];
+  } else {
+    currentItem.mediaItems = [NSArray arrayWithObject:media];
+  }
+}
 
 // Create an enclosure NSDictionary from enclosure (or link) attributes
 - (BOOL)createEnclosureFromAttributes:(NSDictionary *)attributes andAddToItem:(MWFeedItem *)currentItem {

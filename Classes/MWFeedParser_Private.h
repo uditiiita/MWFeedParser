@@ -43,6 +43,7 @@
 @property (nonatomic, strong) NSString *currentPath;
 @property (nonatomic, strong) NSMutableString *currentText;
 @property (nonatomic, strong) NSDictionary *currentElementAttributes;
+@property (nonatomic, strong) NSMutableDictionary *currentPathAttributes;
 @property (nonatomic, strong) MWFeedItem *item;
 @property (nonatomic, strong) MWFeedInfo *info;
 @property (nonatomic, copy) NSString *pathOfElementWithXHTMLType;

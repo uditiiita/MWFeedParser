@@ -59,4 +59,9 @@
 @property (nonatomic, copy) NSString *author;
 @property (nonatomic, copy) NSArray *enclosures;
 
+/*
+ Array of media items in the feed item. Also see @pre MWMediaItem
+ */
+@property (nonatomic) NSArray *mediaItems;
+
 @end
