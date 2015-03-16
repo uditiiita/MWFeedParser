@@ -269,19 +269,23 @@
 		
 		// Create NSXMLParser
 		if (data) {
-			NSXMLParser *newFeedParser = [[NSXMLParser alloc] initWithData:data];
-			self.feedParser = newFeedParser;
-			if (feedParser) { 
-				
-				// Parse!
-				feedParser.delegate = self;
-				[feedParser setShouldProcessNamespaces:YES];
-				[feedParser parse];
-				self.feedParser = nil; // Release after parse
-				
-			} else {
-				[self parsingFailedWithErrorCode:MWErrorCodeFeedParsingError andDescription:@"Feed not a valid XML document"];
-			}
+      //http://stackoverflow.com/a/25442027/1541873
+      dispatch_queue_t reentrantAvoidanceQueue = dispatch_queue_create("reentrantAvoidanceQueue", DISPATCH_QUEUE_SERIAL);
+      dispatch_async(reentrantAvoidanceQueue, ^{
+        NSXMLParser *newFeedParser = [[NSXMLParser alloc] initWithData:data];
+        self.feedParser = newFeedParser;
+        if (self.feedParser) {
+          
+          // Parse!
+          self.feedParser.delegate = self;
+          [self.feedParser setShouldProcessNamespaces:YES];
+          [self.feedParser parse];
+          self.feedParser = nil; // Release after parse
+        } else {
+          [self parsingFailedWithErrorCode:MWErrorCodeFeedParsingError andDescription:@"Feed not a valid XML document"];
+        }
+      });
+      dispatch_sync(reentrantAvoidanceQueue, ^{ });
 		} else {
 			[self parsingFailedWithErrorCode:MWErrorCodeFeedParsingError andDescription:@"Error with feed encoding"];
 		}
